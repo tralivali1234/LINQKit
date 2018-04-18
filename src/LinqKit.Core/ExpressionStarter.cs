@@ -109,7 +109,7 @@ namespace LinqKit
         public Func<T, bool> Compile() { return Predicate.Compile(); }
 #endif
 
-#if !(NET35 || WINDOWS_APP || NETSTANDARD || PORTABLE40 || UAP)
+#if !(NET35 || WINDOWS_APP || NETSTANDARD || PORTABLE || PORTABLE40 || UAP)
         /// <summary></summary>
         public Func<T, bool> Compile(DebugInfoGenerator debugInfoGenerator) { return Predicate.Compile(debugInfoGenerator); }
 
@@ -131,20 +131,20 @@ namespace LinqKit
         public ReadOnlyCollection<ParameterExpression> Parameters => Predicate.Parameters;
 
         /// <summary></summary>
-        public Type Type { get { return Predicate.Type; } }
+        public Type Type => Predicate.Type;
 
 #if !(NET35)
         /// <summary></summary>
-        public string Name { get { return Predicate.Name; } }
+        public string Name => Predicate.Name;
 
         /// <summary></summary>
-        public Type ReturnType { get { return Predicate.ReturnType; } }
+        public Type ReturnType => Predicate.ReturnType;
 
         /// <summary></summary>
-        public bool TailCall { get { return Predicate.TailCall; } }
+        public bool TailCall => Predicate.TailCall;
 #endif
 
-#if !(NET35 || WINDOWS_APP || NETSTANDARD || PORTABLE40 || UAP)
+#if !(NET35 || WINDOWS_APP || NETSTANDARD || PORTABLE || PORTABLE40 || UAP)
         /// <summary></summary>
         public void CompileToMethod(MethodBuilder method) { Predicate.CompileToMethod(method); }
 
@@ -157,7 +157,7 @@ namespace LinqKit
         #region Implement Expression methods and properties
 #if !(NET35)
         /// <summary></summary>
-        public virtual bool CanReduce { get { return Predicate.CanReduce; } }
+        public virtual bool CanReduce => Predicate.CanReduce;
 #endif
         #endregion
     }

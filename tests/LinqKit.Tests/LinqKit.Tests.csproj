@@ -3,8 +3,9 @@
   <PropertyGroup>
     <Authors>Stef Heyenrath</Authors>
     <TargetFramework>net452</TargetFramework>
-    <AssemblyName>LinqKit.Microsoft.EntityFrameworkCore.Tests</AssemblyName>
-    <PackageId>LinqKit.Microsoft.EntityFrameworkCore.Tests</PackageId>
+    <DefineConstants>$(DefineConstants);NOEF</DefineConstants>
+    <AssemblyName>LinqKit.Tests</AssemblyName>
+    <PackageId>LinqKit.Tests</PackageId>
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
     <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
     <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
@@ -16,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\LinqKit.EntityFramework\LinqKit.EntityFramework.csproj" />
+    <ProjectReference Include="..\..\src\LinqKit\LinqKit.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -27,11 +28,8 @@
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net452' ">
-    <PackageReference Include="EntityFramework" Version="6.2.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Properties\" />
+    <Reference Include="System" />
+    <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
 
 </Project>

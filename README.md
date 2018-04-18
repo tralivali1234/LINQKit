@@ -1,12 +1,11 @@
-[![Build status](https://ci.appveyor.com/api/projects/status/awc6lltod7frkbv6?svg=true)](https://ci.appveyor.com/project/StefH/linqkit-tcg2p)
-
+[![Build status](https://ci.appveyor.com/api/projects/status/srwru0a96rw9v7dn?svg=true)](https://ci.appveyor.com/project/StefH/linqkit)
 
 | Project | NuGet | Dependency | Frameworks |
 | ------- | ----- | -----------| ---------- | 
-| LinqKit | [![Version](https://img.shields.io/nuget/v/LinqKit.svg)](https://www.nuget.org/packages/LinqKit) | EntityFramework | <ul><li>net45</li><li>net45x</li><li>net46x</li></ul> |
-| LinqKit.Core | [![Version](https://img.shields.io/nuget/v/LinqKit.Core.svg)](https://www.nuget.org/packages/LinqKit.Core) | | <ul><li>net35</li><li>net40</li><li>net45 & net45x</li><li>net46x</li><li>netcore5</li><li>.NETPortable Profile 328</li><li>netstandard1.3</li><li>sl5</li><li>uap10</li></ul>|
-| LinqKit.EntityFramework | [![Version](https://img.shields.io/nuget/v/LinqKit.EntityFramework.svg)](https://www.nuget.org/packages/LinqKit.EntityFramework) | EntityFramework | <ul><li>net45</li><li>net45x</li><li>net46x</li></ul> |
-| LinqKit.Microsoft.EntityFrameworkCore | [![Version](https://img.shields.io/nuget/v/LinqKit.Microsoft.EntityFrameworkCore.svg)](https://www.nuget.org/packages/LinqKit.Microsoft.EntityFrameworkCore) | EntityFrameworkCore | <ul><li>net45x</li><li>net46x</li><li>netcore5</li><li>netstandard1.3</li></ul>|
+| LinqKit | [![NuGet Badge](https://buildstats.info/nuget/LinqKit)](https://www.nuget.org/packages/LinqKit) | EntityFramework | <ul><li>net45 and up</li></ul> |
+| LinqKit.Core | [![NuGet Badge](https://buildstats.info/nuget/LinqKit.Core)](https://www.nuget.org/packages/LinqKit.Core) | | <ul><li>net35</li><li>net40</li><li>net45 and up</li><li>.NETPortable Profile 259</li><li>.NETPortable Profile 328</li><li>netstandard1.3</li><li>netstandard2.0</li><li>uap10</li></ul>|
+| LinqKit.EntityFramework | [![NuGet Badge](https://buildstats.info/nuget/LinqKit.EntityFramework)](https://www.nuget.org/packages/LinqKit.EntityFramework) | EntityFramework | <ul><li>net45 and up</li></ul> |
+| LinqKit.Microsoft.EntityFrameworkCore | [![NuGet Badge](https://buildstats.info/nuget/LinqKit.Microsoft.EntityFrameworkCore)](https://www.nuget.org/packages/LinqKit.Microsoft.EntityFrameworkCore) | EntityFrameworkCore | <ul><li>net451 and up</li><li>netstandard1.3</li><li>netstandard2.0</li></ul>|
 
 
 Table of Contents
@@ -83,7 +82,7 @@ static string[] QueryCustomers (Expression<Func<Purchase, bool>> purchaseCriteri
 
   var query =
     from c in data.Customers
-    where c.Purchases.Any (purchaseCriteria)  // will not compile
+    where c.Purchases.Any(purchaseCriteria)  // will not compile
     select c.Name;
 
   return query.ToArray();
@@ -95,7 +94,7 @@ But there's a problem: Customer.Purchases is of type EntitySet<> (or EntityColle
 It would be a different story if we were querying the Purchases table directly (rather the via the Customer.Purchases association property). The Purchases property is of type Table<Purchase> which implements IQueryable, allowing us to do the following:
 
 ```csharp
-bool any = data.Purchases.Any (purchaseCriteria);
+bool any = data.Purchases.Any(purchaseCriteria);
 ```
 
 Of course, we could rewrite QueryCustomers to accept a Func<Purchase,bool> instead:
@@ -229,7 +228,7 @@ PredicateBuilder
 
 When applying expressions built with PredicateBuilder to an Entity Framework query, remember to call AsExpandable on the first table in the query.
 
-##Dynamically Composing Expression Predicates
+## Dynamically Composing Expression Predicates
 
 Suppose you want to write a LINQ to SQL or Entity Framework query that implements a keyword-style search. In other words, a query that returns rows whose description contains some or all of a given set of keywords.
 
@@ -255,9 +254,25 @@ So far, so good. But this only handles the case where you want to match all of t
 
 Of all the things that will drive you to manually constructing expression trees, the need for dynamic predicates is the most common in a typical business application. Fortunately, it’s possible to write a set of simple and reusable extension methods that radically simplify this task. This is the role of our PredicateBuilder class.
 
-##Using PredicateBuilder
+## Using PredicateBuilder
 
 Here's how to solve the preceding example with PredicateBuilder:
+
+```csharp
+IQueryable<Product> SearchProducts (params string[] keywords)
+{
+  var predicate = PredicateBuilder.New<Product>(true);
+
+  foreach (string keyword in keywords)
+  {
+    string temp = keyword;
+    predicate = predicate.And (p => p.Description.Contains (temp));
+  }
+  return dataContext.Products.Where (predicate);
+}
+```
+
+.. and to search for any keyword instead of all keywords (Or instead of And):
 
 ```csharp
 IQueryable<Product> SearchProducts (params string[] keywords)
@@ -279,7 +294,7 @@ If querying with Entity Framework, change the last line to this:
 return objectContext.Products.AsExpandable().Where (predicate);
 ```
 
-##How it Works
+## How it Works
 
 
 ~~The True and False methods do nothing special: they are simply convenient shortcuts for creating an Expression<Func<T,bool>> that initially evaluates to true or false.~~
@@ -289,7 +304,7 @@ PredicateBuilder.New() creates an object called ExpressionStarter<T>, which acts
 So the following:
 
 ```csharp
-var predicate = PredicateBuilder.New() <Product> ();
+var predicate = PredicateBuilder.New<Product>();
 ```
 
 Would be a shortcut for this:
@@ -312,7 +327,7 @@ The interesting work takes place inside the And and Or methods. We start by invo
 
 Entity Framework's query processing pipeline cannot handle invocation expressions, which is why you need to call AsExpandable on the first object in the query. By calling AsExpandable, you activate LINQKit's expression visitor class which substitutes invocation expressions with simpler constructs that Entity Framework can understand.
 
-##More Examples
+## More Examples
 
 A useful pattern in writing a data access layer is to create a reusable predicate library. Your queries, then, consist largely of select and orderby clauses, the filtering logic farmed out to your library. Here's a simple example:
 
@@ -328,11 +343,10 @@ public partial class Product
 
 We can extend this by adding a method that uses PredicateBuilder:
 
-```csharp
+``` csharp
 public partial class Product
 {
-  public static Expression<Func<Product, bool>> ContainsInDescription (
-                                                params string[] keywords)
+  public static Expression<Func<Product, bool>> ContainsInDescription (params string[] keywords)
   {
     var predicate = PredicateBuilder.New<Product>();
     foreach (string keyword in keywords)
@@ -375,7 +389,7 @@ public static Expression<Func<Product, bool>> IsSelling (int minPurchases)
 }
 ```
 
-##Nesting Predicates
+## Nesting Predicates
 
 Consider the following predicate:
 
@@ -392,17 +406,17 @@ The answer is to build the parenthesised expression first, and then consume it i
 ```csharp
 var inner = PredicateBuilder.New<Product>();
 inner = inner.Start(p => p.Description.Contains ("foo"));
-inner = inner.Or (p => p.Description.Contains ("far"));
+inner = inner.Or(p => p.Description.Contains ("far"));
 
 var outer = PredicateBuilder.New<Product>();
 outer = outer.Start(p => p.Price > 100);
-outer = outer.And (p => p.Price < 1000);
-outer = outer.And (inner);
+outer = outer.And(p => p.Price < 1000);
+outer = outer.And(inner);
 ```
 
 ~~Notice that with the inner expression, we start with PredicateBuilder.False (because we're using the Or operator). With the outer expression, however, we start with PredicateBuilder.True (because we're using the And operator).~~
 
-##Generic Predicates
+## Generic Predicates
 
 Suppose every table in your database has ValidFrom and ValidTo columns as follows:
 
@@ -519,9 +533,14 @@ using LinqKit;
 
 public class Order
 {
-    [Key] public int Id { get; set; }
-    [Required] public int Amount { get; set; }
-    [Required] public DateTime OrderDate { get; set; }
+    [Key]
+    public int Id { get; set; }
+
+    [Required]
+    public int Amount { get; set; }
+
+    [Required]
+    public DateTime OrderDate { get; set; }
 }
 
 /// <summary> Some simple EF DBContext item for this example</summary>
@@ -608,15 +627,19 @@ SELECT
 
 As you noticed, there are lot of dynamic parameters. This is good if the parameters vary a lot, but here they are pretty static so SQL-server will not be able to perform all caching optimizations. We could optimize away these variables by runtime when LinqKit forms the query.
 
-There is a project called [Linq.Expression.Optimizer](https://thorium.github.io/Linq.Expression.Optimizer/) and it is supported by LinqKit. Install the nuget package (and add reference to F#-core library), and make this static call once before executing your queries (e.g. to your app startup or static class constructor or Application_Start):
+There is a project called [Linq.Expression.Optimizer](https://thorium.github.io/Linq.Expression.Optimizer/) and it is supported by LinqKit.
+Install this nuget package (and add reference to F#-core library if required).
+
+### Use the static option (all calls)
+Make this static call once before executing your queries (e.g. to your app startup or static class constructor or Application_Start):
 
 ```csharp
-LinqkitExtension.QueryOptimizer = ExpressionOptimizer.visit;
+LinqKitExtension.QueryOptimizer = ExpressionOptimizer.visit;
 ```
 
 And run your query as usual. Observe the difference, now the same query is:
 
-```
+```sql
 SELECT 
     [Extent1].[Amount] AS [Amount], 
     [Extent1].[OrderDate] AS [OrderDate], 
@@ -625,7 +648,38 @@ SELECT
     WHERE ([Extent1].[Amount] - 10) < 100
 ```
 
-If your IQueryable has dynamic parameters from other IQueryables, it can still be complex.
+### Use the dynamic option (each call separate)
+It's also possible to use the expression optimizer for specific calls only.
+
+``` csharp
+// define the optimizer you want to use
+var optimizer = ExpressionOptimizer.visit;
+
+// simulate some dynamic non-database-parameter
+var t = DateTime.Now.Month % 3; 
+
+// provide the optimizer in the AsExpandable call
+var qry1 =
+    from o in context.Orders.AsExpandable(optimizer)
+    let myTemp = 
+        t == 1 ? o.Amount + 10 :
+        t == 2 ? o.Amount - 10 :
+        o.Amount
+    select new
+    {
+        OrderDate = o.OrderDate,
+        FixedAmount = myTemp
+    };
+
+var qry2 = 
+    from x in qry1
+    where x.FixedAmount < 100
+    select x;
+
+var res = qry2.ToList();
+```
+
+Note that if your IQueryable has dynamic parameters from other IQueryables, it can still be complex.
 
 Original source and author
 =======
@@ -637,9 +691,8 @@ Permission has been granted to have this repo be the official source for this pr
 Contributing
 =======
 Just send PullRequests to the this repository.
-To compile the whole solution you may need .NET Core and Silverlight 5 SDK installed.
+To compile the whole solution you may need .NET Core and UAP installed.
 
 License
 =======
 LINQKit is free. The source code is issued under a permissive free license, which means you can modify it as you please, and incorporate it into your own commercial or non-commercial software.
-.
